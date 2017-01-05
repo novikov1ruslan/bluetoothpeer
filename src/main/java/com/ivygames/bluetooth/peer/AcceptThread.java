@@ -45,36 +45,29 @@ final class AcceptThread extends Thread {
     public void run() {
         Ln.v("obtaining transmission socket...");
         try {
-            mSocket = obtainBluetoothSocket();
-        } catch (final IOException ioe) {
+            mSocket = acceptBluetoothSocket();
+        } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.v("cancelled while accepting");
             } else {
-                // timeout?
-                Ln.w("failed to obtain socket");
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mConnectionListener.onConnectFailed();
-                    }
-                });
+                Ln.w(ioe, "failed to obtain socket");
+                mHandler.post(new ConnectFailedCommand());
             }
             return;
         }
 
         Ln.v("connection accepted - starting transmission");
         try {
-            final BluetoothConnectionImpl mConnection = new BluetoothConnectionImpl(mSocket, mHandler);
-            mConnection.connect();
+            final BluetoothConnectionImpl connection = connectToSocket(mSocket);
 
             // we post connected event after connection object is created
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    mConnectionListener.onConnected(mConnection);
+                    mConnectionListener.onConnected(connection);
                 }
             });
-            mConnection.startReceiving();
+            connection.startReceiving();
         } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.v("cancelled while connected");
@@ -92,7 +85,15 @@ final class AcceptThread extends Thread {
         }
     }
 
-    private BluetoothSocket obtainBluetoothSocket() throws IOException {
+    @NonNull
+    private BluetoothConnectionImpl connectToSocket(@NonNull BluetoothSocket socket) throws IOException {
+        BluetoothConnectionImpl connection = new BluetoothConnectionImpl(socket, mHandler);
+        connection.connect();
+        return connection;
+    }
+
+    @NonNull
+    private BluetoothSocket acceptBluetoothSocket() throws IOException {
         try {
             mServerSocket = mAdapter.listenUsingRfcommWithServiceRecord(NAME, mUuid);
             Ln.v("server socket created, accepting connection...");
@@ -114,4 +115,10 @@ final class AcceptThread extends Thread {
         }
     }
 
+    private class ConnectFailedCommand implements Runnable {
+        @Override
+        public void run() {
+            mConnectionListener.onConnectFailed();
+        }
+    }
 }

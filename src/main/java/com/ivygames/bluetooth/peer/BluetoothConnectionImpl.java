@@ -82,7 +82,7 @@ class BluetoothConnectionImpl implements BluetoothConnection {
      * Write to the connected OutStream.
      */
     @Override
-    public void write(@NonNull String message) {
+    public void send(@NonNull String message) {
         byte[] buffer = message.getBytes();
         Ln.v("writing " + buffer.length + " bytes");
         try {
