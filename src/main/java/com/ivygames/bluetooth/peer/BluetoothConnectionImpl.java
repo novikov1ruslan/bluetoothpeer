@@ -2,6 +2,7 @@ package com.ivygames.bluetooth.peer;
 
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 
 import org.commons.logger.Ln;
@@ -17,14 +18,17 @@ class BluetoothConnectionImpl implements BluetoothConnection {
     private InputStream mInStream;
     private OutputStream mOutStream;
 
+    @NonNull
     private final BluetoothSocket mSocket;
-    private final Handler mHandler;
+    @NonNull
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
+
     private volatile MessageReceiver mMessageReceiver;
 
-    BluetoothConnectionImpl(@NonNull BluetoothSocket socket, @NonNull Handler handler) {
+    BluetoothConnectionImpl(@NonNull BluetoothSocket socket) {
         mSocket = socket;
-        mHandler = handler;
     }
+
 
     void connect() throws IOException {
         // get the BluetoothSocket input and output streams

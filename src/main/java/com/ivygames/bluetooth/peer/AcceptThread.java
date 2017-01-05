@@ -87,7 +87,7 @@ final class AcceptThread extends Thread {
 
     @NonNull
     private BluetoothConnectionImpl connectToSocket(@NonNull BluetoothSocket socket) throws IOException {
-        BluetoothConnectionImpl connection = new BluetoothConnectionImpl(socket, mHandler);
+        BluetoothConnectionImpl connection = new BluetoothConnectionImpl(socket);
         connection.connect();
         return connection;
     }
