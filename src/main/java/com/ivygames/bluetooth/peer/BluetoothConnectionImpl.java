@@ -15,6 +15,8 @@ import java.io.OutputStream;
  * This thread runs during a connection with a remote device. It handles all incoming and outgoing transmissions.
  */
 class BluetoothConnectionImpl implements BluetoothConnection {
+    private static final char MESSAGE_SEPARATOR = '|';
+
     private InputStream mInStream;
     private OutputStream mOutStream;
 
@@ -73,7 +75,7 @@ class BluetoothConnectionImpl implements BluetoothConnection {
             if (c == -1) {
                 throw new IOException("-1 is read");
             }
-            if (c == '|') {
+            if (c == MESSAGE_SEPARATOR) {
                 break;
             }
             builder.append((char) c);
@@ -91,6 +93,7 @@ class BluetoothConnectionImpl implements BluetoothConnection {
         Ln.v("writing " + buffer.length + " bytes");
         try {
             mOutStream.write(buffer);
+            mOutStream.write(MESSAGE_SEPARATOR);
         } catch (IOException ioe) {
             Ln.w(ioe);
         }
