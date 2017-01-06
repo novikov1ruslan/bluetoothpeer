@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.commons.logger.Ln;
 
@@ -44,8 +45,31 @@ final class AcceptThread extends Thread {
     @Override
     public void run() {
         Ln.v("obtaining transmission socket...");
+        mSocket = obtainTransmissionSocketWithErrorHandling();
+        if (mSocket == null) {
+            return;
+        }
+
+        Ln.v("connection accepted - starting transmission");
         try {
-            mSocket = acceptBluetoothSocket();
+            startReceiving(mSocket);
+        }finally {
+            BluetoothUtils.close(mSocket);
+        }
+    }
+
+    void cancelAccept() {
+        Ln.v("canceling accept...");
+        mCancelled = true;
+        interrupt();
+        BluetoothUtils.close(mServerSocket);
+        BluetoothUtils.close(mSocket);
+    }
+
+    @Nullable
+    private BluetoothSocket obtainTransmissionSocketWithErrorHandling() {
+        try {
+            return acceptBluetoothSocket();
         } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.v("cancelled while accepting");
@@ -53,35 +77,22 @@ final class AcceptThread extends Thread {
                 Ln.w(ioe, "failed to obtain socket");
                 mHandler.post(new ConnectFailedCommand());
             }
-            return;
+            return null;
         }
+    }
 
-        Ln.v("connection accepted - starting transmission");
+    private void startReceiving(@NonNull BluetoothSocket socket) {
         try {
-            final BluetoothConnectionImpl connection = connectToSocket(mSocket);
-
-            // we post connected event after connection object is created
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mConnectionListener.onConnected(connection);
-                }
-            });
+            BluetoothConnectionImpl connection = connectToSocket(socket);
+            mHandler.post(new ConnectedCommand(connection));
             connection.startReceiving();
         } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.v("cancelled while connected");
             } else {
                 Ln.w(ioe);
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mConnectionListener.onConnectionLost();
-                    }
-                });
+                mHandler.post(new ConnectionLostCommand());
             }
-        } finally {
-            BluetoothUtils.close(mSocket);
         }
     }
 
@@ -104,21 +115,31 @@ final class AcceptThread extends Thread {
         }
     }
 
-    void cancelAccept() {
-        Ln.v("canceling accept...");
-        mCancelled = true;
-        BluetoothUtils.close(mServerSocket);
-        if (mSocket != null) {
-            Ln.v("closing accepted connection...");
-            interrupt();
-            BluetoothUtils.close(mSocket);
-        }
-    }
-
     private class ConnectFailedCommand implements Runnable {
         @Override
         public void run() {
             mConnectionListener.onConnectFailed();
+        }
+    }
+
+    private class ConnectedCommand implements Runnable {
+        @NonNull
+        private final BluetoothConnectionImpl mConnection;
+
+        ConnectedCommand(@NonNull BluetoothConnectionImpl connection) {
+            mConnection = connection;
+        }
+
+        @Override
+        public void run() {
+            mConnectionListener.onConnected(mConnection);
+        }
+    }
+
+    private class ConnectionLostCommand implements Runnable {
+        @Override
+        public void run() {
+            mConnectionListener.onConnectionLost();
         }
     }
 }
