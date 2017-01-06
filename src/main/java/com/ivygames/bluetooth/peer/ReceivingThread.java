@@ -14,10 +14,10 @@ abstract class ReceivingThread extends Thread {
     final ConnectionListener mConnectionListener;
     @NonNull
     final Handler mHandler = new Handler(Looper.getMainLooper());
-    protected volatile BluetoothSocket mSocket;
+    volatile BluetoothSocket mSocket;
     volatile boolean mCancelled;
 
-    ReceivingThread(String name, @NonNull ConnectionListener listener) {
+    ReceivingThread(@NonNull String name, @NonNull ConnectionListener listener) {
         super(name);
         mConnectionListener = listener;
     }
@@ -45,7 +45,9 @@ abstract class ReceivingThread extends Thread {
     }
 
     void cancel() {
+        Ln.v("cancelling " + getName() + "...");
         mCancelled = true;
         interrupt();
+        BluetoothUtils.close(mSocket);
     }
 }

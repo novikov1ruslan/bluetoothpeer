@@ -49,14 +49,14 @@ final class ConnectThread extends ReceivingThread {
         BluetoothSocket socket = null;
         try {
             socket = obtainConnectedSocket(mDevice);
-        } catch (final IOException ioe) {
+        } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.v("cancelled while connecting");
             } else {
                 Ln.d(ioe, "failed to obtain socket");
                 mHandler.post(new ConnectFailedCommand(mConnectionListener));
             }
-            BluetoothUtils.close(mSocket);
+            BluetoothUtils.close(socket);
         }
         return socket;
     }
@@ -69,13 +69,6 @@ final class ConnectThread extends ReceivingThread {
         socket.connect();
         Ln.v("socket connected.");
         return socket;
-    }
-
-    @Override
-    void cancel() {
-        Ln.v("cancelling...");
-        super.cancel();
-        BluetoothUtils.close(mSocket);
     }
 
 }

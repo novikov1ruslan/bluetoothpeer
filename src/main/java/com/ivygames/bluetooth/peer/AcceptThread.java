@@ -51,10 +51,8 @@ final class AcceptThread extends ReceivingThread {
 
     @Override
     void cancel() {
-        Ln.v("canceling accept...");
         super.cancel();
         BluetoothUtils.close(mServerSocket);
-        BluetoothUtils.close(mSocket);
     }
 
     @Nullable
