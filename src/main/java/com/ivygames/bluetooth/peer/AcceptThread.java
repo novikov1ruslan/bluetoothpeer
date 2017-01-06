@@ -75,7 +75,7 @@ final class AcceptThread extends Thread {
                 Ln.v("cancelled while accepting");
             } else {
                 Ln.w(ioe, "failed to obtain socket");
-                mHandler.post(new ConnectFailedCommand());
+                mHandler.post(new ConnectFailedCommand(mConnectionListener));
             }
             return null;
         }
@@ -84,14 +84,14 @@ final class AcceptThread extends Thread {
     private void startReceiving(@NonNull BluetoothSocket socket) {
         try {
             BluetoothConnectionImpl connection = connectToSocket(socket);
-            mHandler.post(new ConnectedCommand(connection));
+            mHandler.post(new ConnectedCommand(connection, mConnectionListener));
             connection.startReceiving();
         } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.v("cancelled while connected");
             } else {
                 Ln.w(ioe);
-                mHandler.post(new ConnectionLostCommand());
+                mHandler.post(new ConnectionLostCommand(mConnectionListener));
             }
         }
     }
@@ -115,31 +115,4 @@ final class AcceptThread extends Thread {
         }
     }
 
-    private class ConnectFailedCommand implements Runnable {
-        @Override
-        public void run() {
-            mConnectionListener.onConnectFailed();
-        }
-    }
-
-    private class ConnectedCommand implements Runnable {
-        @NonNull
-        private final BluetoothConnectionImpl mConnection;
-
-        ConnectedCommand(@NonNull BluetoothConnectionImpl connection) {
-            mConnection = connection;
-        }
-
-        @Override
-        public void run() {
-            mConnectionListener.onConnected(mConnection);
-        }
-    }
-
-    private class ConnectionLostCommand implements Runnable {
-        @Override
-        public void run() {
-            mConnectionListener.onConnectionLost();
-        }
-    }
 }
