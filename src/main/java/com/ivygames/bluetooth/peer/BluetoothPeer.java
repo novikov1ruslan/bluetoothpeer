@@ -76,7 +76,7 @@ public class BluetoothPeer {
             return;
         }
 
-        mAcceptThread.cancelAccept();
+        mAcceptThread.cancel();
         BluetoothUtils.join(mAcceptThread);
         mAcceptThread = null;
     }

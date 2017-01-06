@@ -3,8 +3,6 @@ package com.ivygames.bluetooth.peer;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -16,18 +14,12 @@ import java.util.UUID;
 /**
  * This thread runs while listening for incoming connections. It behaves like a server-side client. It runs until a connection is accepted (or until cancelled).
  */
-final class AcceptThread extends Thread {
+final class AcceptThread extends ReceivingThread {
     // Name for the SDP record when creating server socket
     private static final String NAME = "BtGameManager";
 
     private volatile BluetoothServerSocket mServerSocket;
-    private volatile BluetoothSocket mSocket;
-    private volatile boolean mCancelled;
 
-    @NonNull
-    private final ConnectionListener mConnectionListener;
-    @NonNull
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
     @NonNull
     private final BluetoothAdapter mAdapter;
     @NonNull
@@ -36,8 +28,7 @@ final class AcceptThread extends Thread {
     AcceptThread(@NonNull ConnectionListener listener,
                  @NonNull BluetoothAdapter adapter,
                  @NonNull UUID uuid) {
-        super("bt_accept");
-        mConnectionListener = listener;
+        super("bt_accept", listener);
         mAdapter = adapter;
         mUuid = uuid;
     }
@@ -45,7 +36,7 @@ final class AcceptThread extends Thread {
     @Override
     public void run() {
         Ln.v("obtaining transmission socket...");
-        mSocket = obtainTransmissionSocketWithErrorHandling();
+        mSocket = acceptTransmissionSocketWithErrorHandling();
         if (mSocket == null) {
             return;
         }
@@ -53,21 +44,21 @@ final class AcceptThread extends Thread {
         Ln.v("connection accepted - starting transmission");
         try {
             startReceiving(mSocket);
-        }finally {
+        } finally {
             BluetoothUtils.close(mSocket);
         }
     }
 
-    void cancelAccept() {
+    @Override
+    void cancel() {
         Ln.v("canceling accept...");
-        mCancelled = true;
-        interrupt();
+        super.cancel();
         BluetoothUtils.close(mServerSocket);
         BluetoothUtils.close(mSocket);
     }
 
     @Nullable
-    private BluetoothSocket obtainTransmissionSocketWithErrorHandling() {
+    private BluetoothSocket acceptTransmissionSocketWithErrorHandling() {
         try {
             return acceptBluetoothSocket();
         } catch (IOException ioe) {
@@ -79,28 +70,6 @@ final class AcceptThread extends Thread {
             }
             return null;
         }
-    }
-
-    private void startReceiving(@NonNull BluetoothSocket socket) {
-        try {
-            BluetoothConnectionImpl connection = connectToSocket(socket);
-            mHandler.post(new ConnectedCommand(connection, mConnectionListener));
-            connection.startReceiving();
-        } catch (IOException ioe) {
-            if (mCancelled) {
-                Ln.v("cancelled while connected");
-            } else {
-                Ln.w(ioe);
-                mHandler.post(new ConnectionLostCommand(mConnectionListener));
-            }
-        }
-    }
-
-    @NonNull
-    private BluetoothConnectionImpl connectToSocket(@NonNull BluetoothSocket socket) throws IOException {
-        BluetoothConnectionImpl connection = new BluetoothConnectionImpl(socket);
-        connection.connect();
-        return connection;
     }
 
     @NonNull
