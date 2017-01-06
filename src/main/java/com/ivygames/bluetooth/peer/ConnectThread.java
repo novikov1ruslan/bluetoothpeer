@@ -46,12 +46,7 @@ final class ConnectThread extends Thread {
                 Ln.v("cancelled while connecting");
             } else {
                 Ln.d(ioe, "failed to obtain socket");
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mConnectionListener.onConnectFailed();
-                    }
-                });
+                mHandler.post(new ConnectFailedCommand(mConnectionListener));
             }
             BluetoothUtils.close(mSocket);
             return;
@@ -63,24 +58,14 @@ final class ConnectThread extends Thread {
             connection.connect();
 
             // we post connected event after connection object is created
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mConnectionListener.onConnected(connection);
-                }
-            });
+            mHandler.post(new ConnectedCommand(connection, mConnectionListener));
             connection.startReceiving();
         } catch (IOException ioe) {
             if (mCancelled) {
                 Ln.d("cancelled while connected");
             } else {
                 Ln.d("connection lost: " + ioe.getMessage());
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mConnectionListener.onConnectionLost();
-                    }
-                });
+                mHandler.post(new ConnectionLostCommand(mConnectionListener));
             }
         } finally {
             BluetoothUtils.close(mSocket);
