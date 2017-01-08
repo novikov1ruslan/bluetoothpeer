@@ -132,4 +132,7 @@ public class BluetoothPeer {
         mConnectThread.start();
     }
 
+    public void resetConnectionLostListener() {
+        mConnectionLostListener = null;
+    }
 }
