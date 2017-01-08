@@ -48,27 +48,18 @@ final class ConnectThread extends ReceivingThread {
     private BluetoothSocket obtainSocketWithErrorHandling() {
         BluetoothSocket socket = null;
         try {
-            socket = obtainConnectedSocket(mDevice);
+            // get a BluetoothSocket for a connection with the given BluetoothDevice
+            socket = mDevice.createRfcommSocketToServiceRecord(mUuid);
+
+            Ln.v("socket created - connecting...");
+            socket.connect();
+            Ln.v("socket connected.");
+            return socket;
         } catch (IOException ioe) {
-            if (mCancelled) {
-                Ln.v("cancelled while connecting");
-            } else {
-                Ln.d(ioe, "failed to obtain socket");
-                mHandler.post(new ConnectFailedCommand(mConnectionListener));
-            }
+            processConnectionFailure(ioe);
             BluetoothUtils.close(socket);
+            return null;
         }
-        return socket;
-    }
-
-    private BluetoothSocket obtainConnectedSocket(@NonNull BluetoothDevice device) throws IOException {
-        // get a BluetoothSocket for a connection with the given BluetoothDevice
-        BluetoothSocket socket = device.createRfcommSocketToServiceRecord(mUuid);
-
-        Ln.v("socket created - connecting...");
-        socket.connect();
-        Ln.v("socket connected.");
-        return socket;
     }
 
 }

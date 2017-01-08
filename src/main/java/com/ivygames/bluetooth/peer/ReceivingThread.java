@@ -11,11 +11,12 @@ import java.io.IOException;
 
 abstract class ReceivingThread extends Thread {
     @NonNull
-    final ConnectionListener mConnectionListener;
+    private final ConnectionListener mConnectionListener;
     @NonNull
-    final Handler mHandler = new Handler(Looper.getMainLooper());
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private volatile boolean mCancelled;
+
     volatile BluetoothSocket mSocket;
-    volatile boolean mCancelled;
 
     ReceivingThread(@NonNull String name, @NonNull ConnectionListener listener) {
         super(name);
@@ -49,5 +50,14 @@ abstract class ReceivingThread extends Thread {
         mCancelled = true;
         interrupt();
         BluetoothUtils.close(mSocket);
+    }
+
+    final void processConnectionFailure(@NonNull IOException ioe) {
+        if (mCancelled) {
+            Ln.v(getName() + ": cancelled while connecting");
+        } else {
+            Ln.w(ioe, "failed to obtain socket");
+            mHandler.post(new ConnectFailedCommand(mConnectionListener));
+        }
     }
 }

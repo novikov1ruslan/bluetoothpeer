@@ -60,12 +60,7 @@ final class AcceptThread extends ReceivingThread {
         try {
             return acceptBluetoothSocket();
         } catch (IOException ioe) {
-            if (mCancelled) {
-                Ln.v("cancelled while accepting");
-            } else {
-                Ln.w(ioe, "failed to obtain socket");
-                mHandler.post(new ConnectFailedCommand(mConnectionListener));
-            }
+            processConnectionFailure(ioe);
             return null;
         }
     }
