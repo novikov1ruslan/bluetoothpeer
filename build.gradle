@@ -27,5 +27,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:support-annotations:23.0.0'
 
-    compile 'com.github.novikov1ruslan:Logger:-SNAPSHOT'
+    compile "com.github.novikov1ruslan:Logger:${loggerVersion}"
 }
