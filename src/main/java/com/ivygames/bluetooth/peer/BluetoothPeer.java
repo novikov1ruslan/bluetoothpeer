@@ -20,13 +20,18 @@ public class BluetoothPeer {
     private AcceptThread mAcceptThread;
     private ConnectThread mConnectThread;
     private ConnectionCreationListener mConnectionCreationListener;
+    @Nullable
     private ConnectionLostListener mConnectionLostListener;
 
     @NonNull
     private final ConnectionListener mConnectionListener = new ConnectionListener() {
         @Override
         public void onConnectionLost() {
-            mConnectionLostListener.onConnectionLost();
+            if (mConnectionLostListener != null) {
+                mConnectionLostListener.onConnectionLost();
+            } else {
+                Ln.e("no connection listener");
+            }
         }
 
         @Override
@@ -49,7 +54,6 @@ public class BluetoothPeer {
         mConnectionCreationListener = listener;
         Ln.v("connection listener = " + listener);
     }
-
 
     public void setConnectionLostListener(@NonNull ConnectionLostListener listener) {
         mConnectionLostListener = listener;
@@ -134,5 +138,6 @@ public class BluetoothPeer {
 
     public void resetConnectionLostListener() {
         mConnectionLostListener = null;
+        Ln.v("connection lost listener reset");
     }
 }
