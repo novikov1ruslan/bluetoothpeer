@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <dimen name="menu_button_layout_height">55dp</dimen>
-    <dimen name="status_vertical_margin">1dp</dimen>
-    <!--<dimen name="gameplay_padding">2dp</dimen>-->
-
-</resources>

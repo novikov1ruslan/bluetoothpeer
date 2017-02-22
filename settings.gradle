@@ -1,5 +1,0 @@
-include ':AppTheme', ':cheetah-mobile-3.4.7', ':battleship', ':bluetoothpeer'
-include ':common'
-include ':BaseGameUtils'
-include ':fragmentdialog'
-include ':MorskoiBoi'
